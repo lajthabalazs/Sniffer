@@ -68,21 +68,13 @@ public class MyVpnService extends VpnService implements Runnable {
 			}
 			if (readBytes > 0) {
 				bufferEnd += readBytes;
-				// Checks if there is a message in the packet array
-				packetLength = TCPIPUtils.getPacketLength(buffer, packetStart, bufferEnd);
-				if (packetLength != -1) {
-					// Check if there is a whole packet in there
-					if (packetLength < bufferEnd - packetStart) {
-						// We have a packet, let's process it!
-						if(packet.parse(buffer, packetStart)) {
-							Log.e("Packet", packet.toString());
-							// Check if buffer should be shifted
-							if (bufferSize - bufferEnd < MAX_PACKET_SIZE) {
-								bufferEnd -= packetStart;
-								packetStart = 0;
-								buffer.compact();
-							}
-						}
+				if(packet.parse(buffer, packetStart, bufferEnd)) {
+					Log.e("Packet", packet.toString());
+					// Check if buffer should be shifted
+					if (bufferSize - bufferEnd < MAX_PACKET_SIZE) {
+						bufferEnd -= packetStart;
+						packetStart = 0;
+						buffer.compact();
 					}
 				}
 			}
