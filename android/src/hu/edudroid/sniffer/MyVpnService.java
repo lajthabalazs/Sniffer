@@ -19,6 +19,7 @@ public class MyVpnService extends VpnService implements Runnable {
 	private ParcelFileDescriptor localInterface;
 	private ByteBuffer buffer = ByteBuffer.allocate(32767);
 	private Packet packet = new Packet();
+	private UDPManager udpManager = new UDPManager(this);
 	
 	
 	@Override
@@ -51,7 +52,6 @@ public class MyVpnService extends VpnService implements Runnable {
 		int packetStart = 0;
 		int bufferEnd = 0;
 		final int bufferSize = buffer.limit();
-		int packetLength;
 		int readBytes;
 		while(running){
 			try {
@@ -67,15 +67,25 @@ public class MyVpnService extends VpnService implements Runnable {
 				continue;
 			}
 			if (readBytes > 0) {
+				Log.e("Packet", "Read bytes " + readBytes);
 				bufferEnd += readBytes;
 				if(packet.parse(buffer, packetStart, bufferEnd)) {
 					Log.e("Packet", packet.toString());
+					if (packet.protocol == Packet.UDP) {
+						try {
+							udpManager.sendPacket(packet.destIp, packet.destPort, packet.sourcePort, packet.data);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
 					// Check if buffer should be shifted
 					if (bufferSize - bufferEnd < MAX_PACKET_SIZE) {
 						bufferEnd -= packetStart;
 						packetStart = 0;
 						buffer.compact();
 					}
+				} else {
+					System.out.println("Not a good packet");
 				}
 			}
 		}
