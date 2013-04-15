@@ -3,6 +3,8 @@ package hu.edudroid.sniffer;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 import android.content.Intent;
@@ -18,8 +20,11 @@ public class MyVpnService extends VpnService implements Runnable {
 	private Thread thread;
 	private ParcelFileDescriptor localInterface;
 	private ByteBuffer buffer = ByteBuffer.allocate(32767);
-	private Packet packet = new Packet();
 	private UDPManager udpManager = new UDPManager(this);
+
+	private FileInputStream localMessageReader;
+
+	private FileOutputStream localMessageWriter;
 	
 	
 	@Override
@@ -27,7 +32,7 @@ public class MyVpnService extends VpnService implements Runnable {
 		Builder builder = new Builder();
 		builder.setSession("Sniffer");
 		builder.setMtu(1450);
-		builder.addAddress("10.0.0.1", 32);
+		builder.addAddress("10.0.0.2", 32);
 		builder.addRoute("0.0.0.0", 0);
 		builder.addDnsServer("8.8.8.8");
 		builder.addSearchDomain("tmit.bme.hu");
@@ -39,8 +44,6 @@ public class MyVpnService extends VpnService implements Runnable {
 
 	@Override
 	public void run() {
-		FileInputStream localMessageReader;
-		FileOutputStream localMessageWriter;
 		try {
 			running = true;		
 			localMessageReader = new FileInputStream(localInterface.getFileDescriptor());
@@ -69,7 +72,12 @@ public class MyVpnService extends VpnService implements Runnable {
 			if (readBytes > 0) {
 				Log.e("Packet", "Read bytes " + readBytes);
 				bufferEnd += readBytes;
-				if(packet.parse(buffer, packetStart, bufferEnd)) {
+				Packet packet = null;
+				try {
+					packet = new Packet(buffer, packetStart, bufferEnd);
+				} catch (IllegalArgumentException e) {
+				}
+				if(packet != null) {
 					Log.e("Packet", packet.toString());
 					if (packet.protocol == Packet.UDP) {
 						try {
@@ -98,6 +106,18 @@ public class MyVpnService extends VpnService implements Runnable {
 			localMessageWriter.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	public void packetReceived(DatagramPacket packet, InetSocketAddress localAddress) {
+		synchronized (localMessageWriter) {
+			// Construct packet
+			Packet serializer = new Packet(packet, localAddress);
+			try {
+				localMessageWriter.write(serializer.toByteArray());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	

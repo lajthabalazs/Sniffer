@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+import android.util.Log;
+
 public class UDPListeningThread implements Runnable{
 	
 	byte[] receivingBuffer = new byte[2048];
@@ -11,9 +13,11 @@ public class UDPListeningThread implements Runnable{
 	private DatagramSocket socket;
 	private boolean running;
 	private Thread thread;
+	private UDPManager manager;
 
-	public UDPListeningThread(DatagramSocket socket) {
+	public UDPListeningThread(DatagramSocket socket, UDPManager manager) {
 		this.socket = socket;
+		this.manager = manager;
 	}
 
 	public void start(){
@@ -24,14 +28,16 @@ public class UDPListeningThread implements Runnable{
 	
 	@Override
 	public void run() {
+		
 		while(running) {
 			System.out.println("Listening on " + socket.getLocalAddress());
 			System.out.println("Remote " + socket.getRemoteSocketAddress());
 			try {
 				socket.receive(receivePacket);
-				System.out.println("Packet received from " + socket.getRemoteSocketAddress().toString());
+				System.out.println("Packet received from " + socket.getRemoteSocketAddress().toString() + " bytes " + receivePacket.getLength());
+				
 			} catch (IOException e) {
-				e.printStackTrace();
+				Log.e("Error receiving packet", "From " + socket.getRemoteSocketAddress() + " > " + e.toString());
 			}
 		}
 	}
