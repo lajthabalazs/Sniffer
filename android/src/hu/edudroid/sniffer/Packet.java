@@ -59,7 +59,7 @@ public class Packet {
 			throw new IllegalArgumentException("Not enough bytes in stream");
 		}
 		ipHeaderLength = ihl * 4;
-		sourcePort = TCPIPUtils.toIntUnsigned(buffer.array()[packetStart + ipHeaderLength + 1], buffer.array()[packetStart + ipHeaderLength]);
+		sourcePort = TCPIPUtils.toIntUnsigned(buffer.array()[packetStart + ipHeaderLength], buffer.array()[packetStart + ipHeaderLength + 1]);
 		destPort =  TCPIPUtils.toIntUnsigned(buffer.array()[packetStart + ipHeaderLength + 2], buffer.array()[packetStart + ipHeaderLength + 3]);
 		destAddress = TCPIPUtils.getLongFromAddress(destIp, destPort);
 		protocol = buffer.array()[packetStart + 9];
@@ -82,7 +82,7 @@ public class Packet {
 		return ret;
 	}
 	
-	public static int IPChecksum(byte[] header) {
+	public int IPChecksum(byte[] header) {
 		int sum = 0;
 		int length = header.length;
 		int i = 0;
@@ -111,19 +111,6 @@ public class Packet {
 		int i = 0;
 		int carry = 0;
 		
-		//Pseudo header
-		sum += (((sourceIp[0] << 8) & 0xFF00) | ((sourceIp[1]) & 0xFF));
-		sum += (((sourceIp[2] << 8) & 0xFF00) | ((sourceIp[3]) & 0xFF));
-		sum += (((destIp[0] << 8) & 0xFF00) | ((destIp[1]) & 0xFF));
-		sum += (((destIp[2] << 8) & 0xFF00) | ((destIp[3]) & 0xFF));
-		sum += (0x00FF & UDP);
-		sum += (0xFFFF & ret.length);
-		carry = (0xFFFF0000 & sum) >> 16; //Carry
-	    if(carry > 0){
-	    	sum = sum & 0xFFFF;
-	    	sum += carry;
-	    }
-		
 		while(length > 1){
 	    	//Calculating the sum of byte pairs
 	    	sum += (((ret[i] << 8) & 0xFF00) | ((ret[i+1]) & 0xFF));
@@ -139,7 +126,20 @@ public class Packet {
 	    	sum = sum & 0xFFFF;
 	    	sum += carry;
 	    }
-	    
+	    		
+		//Pseudo header
+		sum += (((sourceIp[0] << 8) & 0xFF00) | ((sourceIp[1]) & 0xFF));
+		sum += (((sourceIp[2] << 8) & 0xFF00) | ((sourceIp[3]) & 0xFF));
+		sum += (((destIp[0] << 8) & 0xFF00) | ((destIp[1]) & 0xFF));
+		sum += (((destIp[2] << 8) & 0xFF00) | ((destIp[3]) & 0xFF));
+		sum += (0x00FF & UDP);
+		sum += (0xFFFF & ret.length);
+		carry = (0xFFFF0000 & sum) >> 16; //Carry
+	    if(carry > 0){
+	    	sum = sum & 0xFFFF;
+	    	sum += carry;
+	    }
+		
 	    return (~sum) & 0xFFFF;
 	}
 	
@@ -153,13 +153,14 @@ public class Packet {
 		ret[7] = 0; // Flags, Fragment offset part 2
 		ret[8] = 64; // TTL
 		ret[9] = protocol;
-		System.arraycopy(TCPIPUtils.toTwoBytes(0), 0, ret, 4, 2); // 0's for Header checksum calculation
-		System.arraycopy(sourceIp, 0, ret, 12, 2);
-		System.arraycopy(destIp, 0, ret, 12, 4);
+		System.arraycopy(TCPIPUtils.toTwoBytes(0), 0, ret, 10, 2); // 0's for Header checksum calculation
+		System.arraycopy(sourceIp, 0, ret, 12, 4);
+		System.arraycopy(destIp, 0, ret, 16, 4);
+		// No options
 		byte[] header = new byte[ipHeaderLength];
 		System.arraycopy(ret,0,header,0,ipHeaderLength);
-		System.arraycopy(TCPIPUtils.toTwoBytes(IPChecksum(header)), 0, ret, 4, 2); // Header checksum
-		// No options
+		System.arraycopy(TCPIPUtils.toTwoBytes(IPChecksum(header)), 0, ret, 10, 2); // Header checksum
+		
 		if (protocol == UDP) {
 			System.arraycopy(TCPIPUtils.toTwoBytes(sourcePort), 0, ret, 20, 2); // Source port
 			System.arraycopy(TCPIPUtils.toTwoBytes(destPort), 0, ret, 22, 2); // Destination port
