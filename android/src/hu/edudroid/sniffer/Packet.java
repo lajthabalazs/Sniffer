@@ -105,19 +105,19 @@ public class Packet {
 		return (~sum) & 0xFFFF;
 	}
 	
-	public int UDPchecksum(byte[] ret) {
+	public int UDPChecksum(byte[] ret) {
 		int sum = 0;
 		int length = ret.length;
 		int i = 0;
 		int carry = 0;
 		
 		//Pseudo header
-		sum += (((sourceIp[0] << 8) & 0xFF00) | ((sourceIp[1]) & 0xFF))
-		sum += (((sourceIp[2] << 8) & 0xFF00) | ((sourceIp[3]) & 0xFF))
-		sum += (((destIp[0] << 8) & 0xFF00) | ((destIp[1]) & 0xFF))
-		sum += (((destIp[2] << 8) & 0xFF00) | ((destIp[3]) & 0xFF))
-		sum += TCPIPUtils.toTwoBytes(UDP);
-		sum += TCPIPUtils.toTwoBytes(ret.length);
+		sum += (((sourceIp[0] << 8) & 0xFF00) | ((sourceIp[1]) & 0xFF));
+		sum += (((sourceIp[2] << 8) & 0xFF00) | ((sourceIp[3]) & 0xFF));
+		sum += (((destIp[0] << 8) & 0xFF00) | ((destIp[1]) & 0xFF));
+		sum += (((destIp[2] << 8) & 0xFF00) | ((destIp[3]) & 0xFF));
+		sum += (0x00FF & UDP);
+		sum += (0xFFFF & ret.length);
 		carry = (0xFFFF0000 & sum) >> 16; //Carry
 	    if(carry > 0){
 	    	sum = sum & 0xFFFF;
@@ -130,7 +130,7 @@ public class Packet {
 	    	i += 2;
 	    	length -= 2;
 	    }
-		//if length is odd, padd with 0's from right
+		//if length is odd, use padding with 0's from right
 		if(length > 0){
 			sum += (ret[i] << 8 & 0xFF00);
 		}
