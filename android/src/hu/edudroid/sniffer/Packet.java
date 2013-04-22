@@ -212,7 +212,7 @@ public class Packet {
 			System.arraycopy(TCPIPUtils.toTwoBytes(dataLength + 8), 0, ret, 24, 2); // Data + header length
 			System.arraycopy(TCPIPUtils.toTwoBytes(0), 0, ret, 26, 2); // 0's for checksum calculation
 			System.arraycopy(data, 0, ret, 28, dataLength);
-			System.arraycopy(TCPIPUtils.toTwoBytes(Checksum(ret)), 0, ret, 26, 2); // UDP checksum
+			System.arraycopy(TCPIPUtils.toTwoBytes(Checksum(ret)), 0, ret, 26, 2); // Checksum
 		}
 		else if (protocol == TCP) {
 			System.arraycopy(TCPIPUtils.toTwoBytes(sourcePort), 0, ret, 20, 2); // Source port
@@ -230,6 +230,7 @@ public class Packet {
 				System.arraycopy(TCPIPUtils.toTwoBytes(0), 0, ret, 38, 2);
 			}
 			// No options
+			System.arraycopy(TCPIPUtils.toTwoBytes(Checksum(ret)), 0, ret, 36, 2); // UDP checksum
 		}
 		return ret;
 	}
