@@ -22,7 +22,15 @@ public class TCPIPUtils {
 	public static byte toByte(int first, int second) {
 		return (byte)((first << 4) + second);
 	}
-
+	
+	public static long toLong(byte hhb, byte hlb, byte lhb, byte llb) {
+		long number = 0L;
+		number = number & (hhb << 24);
+		number = number & (hlb << 16);
+		number = number & (lhb << 8);
+		number = number & llb;
+		return number;
+	}
 	public static byte[] toTwoBytes(int value) {
 		byte[] ret = new byte[2];
 		ret[1] = (byte)(value & 0xFF);
@@ -30,8 +38,12 @@ public class TCPIPUtils {
 		return ret;
 	}
 
-	public static byte[] toFourBytes(int value) {
+	public static byte[] toFourBytes(long value) {
 		byte[] ret = new byte[4];
+		ret[3] = (byte)(value & 0xFF);
+		ret[2] = (byte)((value >> 8) & 0xFF);
+		ret[1] = (byte)((value >> 16) & 0xFF);
+		ret[0] = (byte)((value >> 24) & 0xFF);
 		return ret;
 	}
 

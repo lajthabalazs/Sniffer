@@ -66,7 +66,7 @@ public class ChecksumTest extends
 		byte[] data = packet.toByteArray();
 		data[26] = 0; //zeroing UDP checksum to calculate it again
 		data[27] = 0;
-		int actual = packet.UDPChecksum(data);
+		int actual = packet.Checksum(data);
 		int expected = (~0x1f3d) & 0x0000FFFF;
 		assertEquals(expected, actual); 
 	}
@@ -90,9 +90,17 @@ public class ChecksumTest extends
 		Packet packet = new Packet(buffer, 0, 34);
 		
 		byte[] data = packet.toByteArray();
-		int actual = packet.UDPChecksum(data);
+		int actual = packet.Checksum(data);
 		int expected = 0;
 		assertEquals(expected, actual); 
+	}
+	
+	public void testFlags() {
+		ByteBuffer buffer = ByteBuffer.allocate(34);
+		buffer.put(new byte[]{0x45, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x40, 0x11, 0x00, 0x00, 0x7f, 0x00, 0x00 , 0x01, 0x7f, 0x00, 0x00, 0x01, 0x07, 0x6c, 0x07, 0x6c, 0x00, 0x06, 0x00, 0x00, 0x01, 0x10, 0x10, 0x01, 0x01, 0x10}); //UDP packet from 127.0.0.1:1900 to 127.0.0.1:1900
+		Packet packet = new Packet(buffer, 0, 34);
+		
+		byte flags = packet.getFlags();
 	}
 
 }
