@@ -40,14 +40,14 @@ public class TCPPacket extends TransportPacket {
 	}
 	
 	public void setFlags(int flags) {
-		if((flags & (1 << 5)) == 1) URG = true;
-		if((flags & (1 << 4)) == 1) ACK = true;
-		if((flags & (1 << 3)) == 1) PSH = true;
-		if((flags & (1 << 2)) == 1) RST = true;
-		if((flags & (1 << 1)) == 1) SYN = true;
-		if((flags & (1 << 0)) == 1) FIN = true;
-	}
-	
+		if((flags & (1 << 5)) > 0) URG = true;
+		if((flags & (1 << 4)) > 0) ACK = true;
+		if((flags & (1 << 3)) > 0) PSH = true;
+		if((flags & (1 << 2)) > 0) RST = true;
+		if((flags & (1 << 1)) > 0) SYN = true;
+		if((flags & (1 << 0)) > 0) FIN = true;
+	} 	
+
 	public byte getFlags() {
 		int flags = 0;
 		
