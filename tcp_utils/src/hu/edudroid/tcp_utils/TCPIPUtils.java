@@ -71,4 +71,31 @@ public class TCPIPUtils {
 			return ret;
 		}
 	}
+	
+	public static int checksum(byte[] header) {
+		return checksum(header, 0, header.length);
+	}
+
+	public static int checksum(byte[] buffer, int start, int lengthToCalculateChecksum) {
+		int sum = 0;
+		int i = 0;
+		while (lengthToCalculateChecksum > 1) {
+			// Calculating the sum of byte pairs
+			sum += (((buffer[i + start] << 8) & 0xFF00) | ((buffer[i + start + 1]) & 0xFF));
+			i += 2;
+			lengthToCalculateChecksum -= 2;
+		}
+
+		// if length is odd, padd with 0's from right
+		if (lengthToCalculateChecksum > 0) {
+			sum += (buffer[i + start] << 8 & 0xFF00);
+		}
+		int carry = (0xFFFF0000 & sum) >> 16; // Carry
+		if (carry > 0) {
+			sum = sum & 0xFFFF;
+			sum += carry;
+		}
+		return (~sum) & 0xFFFF;
+	}
+
 }

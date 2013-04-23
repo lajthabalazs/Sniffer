@@ -72,16 +72,16 @@ public class MyVpnService extends VpnService implements Runnable {
 			if (readBytes > 0) {
 				Log.e("Packet", "Read bytes " + readBytes);
 				bufferEnd += readBytes;
-				Packet packet = null;
+				IPPacket packet = null;
 				try {
-					packet = new Packet(buffer, packetStart, bufferEnd);
+					packet = new IPPacket(buffer, packetStart, bufferEnd);
 				} catch (IllegalArgumentException e) {
 				}
 				if(packet != null) {
 					Log.e("Packet", packet.toString());
-					if (packet.protocol == Packet.UDP) {
+					if (packet.protocol == IPPacket.UDP) {
 						try {
-							udpManager.sendPacket(packet.destIp, packet.destPort, packet.sourcePort, packet.data);
+							udpManager.sendPacket(packet.destIp, packet.payload.destPort, packet.payload.sourcePort, packet.payload.getPayload());
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -112,9 +112,9 @@ public class MyVpnService extends VpnService implements Runnable {
 	public void packetReceived(DatagramPacket packet, InetSocketAddress localAddress) {
 		synchronized (localMessageWriter) {
 			// Construct packet
-			Packet serializer = new Packet(packet, localAddress);
+			IPPacket serializer = new IPPacket(packet, localAddress);
 			try {
-				localMessageWriter.write(serializer.toByteArray());
+				localMessageWriter.write(serializer.toBytes());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
