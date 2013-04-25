@@ -44,9 +44,9 @@ public class IPPacket implements BytePacket {
 		headerLength = ihl * 4;
 		protocol = buffer.array()[packetStart + 9];
 		if (protocol == UDP) {
-			payload = new UDPPacket(buffer, packetStart + headerLength, lastData);
+			payload = new UDPPacket(this,buffer, packetStart + headerLength, lastData);
 		} else if (protocol == TCP) {
-			payload = new TCPPacket(buffer, packetStart + headerLength, lastData);
+			payload = new TCPPacket(this,buffer, packetStart + headerLength, lastData);
 		}
 	}
 

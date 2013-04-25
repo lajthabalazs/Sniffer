@@ -20,8 +20,8 @@ public class TCPPacket extends TransportPacket {
 	private int headerLength;
 	private byte[] data;
 
-	public TCPPacket(ByteBuffer buffer, int startIndex, int packetLength) {
-		super(buffer, startIndex, packetLength);
+	public TCPPacket(IPPacket ipPacket,ByteBuffer buffer, int startIndex, int packetLength) {
+		super(ipPacket,buffer, startIndex, packetLength);
 		seqNum = TCPIPUtils.toLong(buffer.array()[startIndex + 4],buffer.array()[startIndex + 5],buffer.array()[startIndex + 6],buffer.array()[startIndex + 7]);
 		ackNum = TCPIPUtils.toLong(buffer.array()[startIndex + 8],buffer.array()[startIndex + 9],buffer.array()[startIndex + 10],buffer.array()[startIndex + 11]);
 		headerLength = TCPIPUtils.toIntUnsigned(ZERO, buffer.array()[startIndex + 12]);
@@ -31,11 +31,11 @@ public class TCPPacket extends TransportPacket {
 			urgPointer = TCPIPUtils.toIntUnsigned(buffer.array()[startIndex + 18], buffer.array()[startIndex + 19]);
 		}
 		data = new byte[packetLength - headerLength];
-		System.arraycopy(buffer, 0, data, 0, data.length);
+		System.arraycopy(buffer.array(), startIndex+headerLength, data, 0, data.length);
 	}
 
-	public TCPPacket(int sourcePort, int destPort) {
-		super(sourcePort, destPort);
+	public TCPPacket(IPPacket ipPacket, int sourcePort, int destPort) {
+		super(ipPacket,sourcePort, destPort);
 		// TODO Generate packet from incoming data and headers
 	}
 	
@@ -71,7 +71,7 @@ public class TCPPacket extends TransportPacket {
 
 	@Override
 	public void writeBytes(byte[] buffer, int start) {
-		int packetLength = 3;
+		//int packetLength = 3;
 		System.arraycopy(TCPIPUtils.toTwoBytes(sourcePort), 0, buffer, 0, 2); // Source port
 		System.arraycopy(TCPIPUtils.toTwoBytes(destPort), 0, buffer, 2, 2); // Destination port
 		System.arraycopy(TCPIPUtils.toFourBytes(seqNum), 0, buffer, 4, 4); // Sequence number
@@ -87,7 +87,7 @@ public class TCPPacket extends TransportPacket {
 			System.arraycopy(TCPIPUtils.toTwoBytes(0), 0, buffer, 18, 2);
 		}
 		// No options
-		System.arraycopy(TCPIPUtils.toTwoBytes(TCPIPUtils.checksum(buffer, start, packetLength)), 0, buffer, 16, 2); // UDP checksum
+		System.arraycopy(TCPIPUtils.toTwoBytes(checksum(buffer)), 0, buffer, 16, 2); // UDP checksum
 	}
 
 	@Override
