@@ -1,4 +1,4 @@
-package hu.edudroid.sniffer;
+package hu.edudroid.sniffer_core;
 
 import hu.edudroid.tcp_utils.TCPIPUtils;
 

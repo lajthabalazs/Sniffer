@@ -1,4 +1,4 @@
-package hu.edudroid.sniffer;
+package hu.edudroid.sniffer_core;
 
 public interface BytePacket {
 	static final byte ZERO = 0;

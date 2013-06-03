@@ -1,4 +1,4 @@
-package hu.edudroid.sniffer;
+package hu.edudroid.sniffer_core;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
