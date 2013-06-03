@@ -4,7 +4,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
@@ -14,19 +13,20 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 public class MyVpnService extends VpnService implements Runnable {
-
+	
+	private static final int MAX_PACKET_SIZE = 2000;
+	
 	private boolean running = false;
 	private Thread thread;
 	private ParcelFileDescriptor localInterface;
 	private ByteBuffer buffer = ByteBuffer.allocate(32767);
 	private UDPManager udpManager = new UDPManager(this);
-	private TCPManager tcpManager = new TCPManager(this);
 
 	private FileInputStream localMessageReader;
 
 	private FileOutputStream localMessageWriter;
-
-
+	
+	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Builder builder = new Builder();
@@ -52,7 +52,9 @@ public class MyVpnService extends VpnService implements Runnable {
 			e.printStackTrace();
 			return;
 		}
+		int packetStart = 0;
 		int bufferEnd = 0;
+		final int bufferSize = buffer.limit();
 		int readBytes;
 		while(running){
 			try {
@@ -69,50 +71,41 @@ public class MyVpnService extends VpnService implements Runnable {
 			}
 			if (readBytes > 0) {
 				Log.e("Packet", "Read bytes " + readBytes);
-				bufferEnd = readBytes;
+				bufferEnd += readBytes;
 				IPPacket packet = null;
-				// Reads available packets
-				while (true) {
-					try {
-						packet = new IPPacket(buffer, 0, bufferEnd);
-					} catch (IllegalArgumentException e) {
-						// If there is an error reading a packet, everything is screwed, restart the VPN
+				try {
+					packet = new IPPacket(buffer, packetStart, bufferEnd);
+				} catch (IllegalArgumentException e) {
+				}
+				if(packet != null) {
+					Log.e("Packet", packet.toString());
+					if (packet.protocol == IPPacket.UDP) {
+						try {
+							udpManager.sendPacket(packet.destIp, packet.payload.destPort, packet.payload.sourcePort, packet.payload.getPayload());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
-					if(packet != null) {
-						Log.e("Packet", packet.toString());
-						if (packet.protocol == IPPacket.UDP) {
-							try {
-								udpManager.sendPacket(packet.destIp, packet.payload.destPort, packet.payload.sourcePort, packet.payload.getPayload());
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-						}
-						else if (packet.protocol == IPPacket.TCP) {
-							try {
-								tcpManager.sendPacket(packet);
-								buffer.compact();
-							} catch (IOException e) {
-								Log.e("MyVPnService", e.getMessage());
-							}
-						}
-						// Shift buffer
+					// Check if buffer should be shifted
+					if (bufferSize - bufferEnd < MAX_PACKET_SIZE) {
+						bufferEnd -= packetStart;
+						packetStart = 0;
 						buffer.compact();
-						packet = null;
-					} else {
-						System.out.println("Not a good packet");
 					}
+				} else {
+					System.out.println("Not a good packet");
 				}
 			}
 		}
 		try {
 			localMessageReader.close();
 		} catch (IOException e) {
-			Log.e("MyVPnService", e.getMessage());
+			e.printStackTrace();
 		}
 		try {
 			localMessageWriter.close();
 		} catch (IOException e) {
-			Log.e("MyVPnService", e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -123,22 +116,11 @@ public class MyVpnService extends VpnService implements Runnable {
 			try {
 				localMessageWriter.write(serializer.toBytes());
 			} catch (IOException e) {
-				Log.e("MyVPnService", e.getMessage());
+				e.printStackTrace();
 			}
 		}
 	}
-
-	public void packetReceived(TCPPacket packet, InetAddress destAddress, InetAddress sourceAddress) {
-		synchronized (localMessageWriter) {
-			try {
-				IPPacket serializer = new IPPacket(packet, destAddress, sourceAddress);
-				localMessageWriter.write(serializer.toBytes());
-			} catch (IOException e) {
-				Log.e("MyVPnService", e.getMessage());
-			}
-		}
-	}
-
+	
 	@Override
 	public void onDestroy() {
 		running = false;

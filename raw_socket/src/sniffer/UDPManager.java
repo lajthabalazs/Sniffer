@@ -9,7 +9,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 
-import android.util.Log;
 import android.util.SparseArray;
 
 public class UDPManager {
@@ -36,7 +35,6 @@ public class UDPManager {
 			socket = new DatagramSocket(sourcePort);
 			vpnService.protect(socket);
 			socket.connect(InetAddress.getByAddress(destAddress), destPort);
-			Log.e("UDP localAddr",socket.getLocalAddress().toString());
 			UDPListeningThread thread = new UDPListeningThread(socket, this);
 			threads.put(socket, thread);
 			socketArray.append(sourcePort, socket);

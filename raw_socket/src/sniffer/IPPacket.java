@@ -3,12 +3,11 @@ package hu.edudroid.sniffer;
 import hu.edudroid.tcp_utils.TCPIPUtils;
 
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 public class IPPacket implements BytePacket {
-	static final byte TCP = 6;
+	private static final byte TCP = 6;
 	static final byte UDP = 17;
 	private static final int MIN_IP_HEADER_SIZE = 20;
 
@@ -20,47 +19,34 @@ public class IPPacket implements BytePacket {
 	public boolean hasIpOptions = false;
 	public TransportPacket payload;
 	public int headerLength;
-	
-	public IPPacket(DatagramPacket packet, InetSocketAddress destAddress) {
+
+	public IPPacket(DatagramPacket packet, InetSocketAddress localAddress) {
 		protocol = UDP;
 		sourceIp = packet.getAddress().getAddress();
-		destIp = destAddress.getAddress().getAddress();
-		payload = new UDPPacket(this, packet, destAddress);
+		destIp = localAddress.getAddress().getAddress();
+		payload = new UDPPacket(this, packet, localAddress);
 	}
 	
-	public IPPacket(TCPPacket packet, InetAddress destAddress, InetAddress sourceAddress) {
-		protocol = TCP;
-		sourceIp = sourceAddress.getAddress();
-		destIp = destAddress.getAddress();
-		ihl = 5;
-		headerLength = ihl * 4;
-		payload = packet;
-		packet.ipPacket = this;
-	}
-
 	public IPPacket(ByteBuffer buffer, int packetStart, int lastData) {
 		// If there isn't a whole ip header, return
 		if (packetStart + MIN_IP_HEADER_SIZE > lastData) {
 			throw new IllegalArgumentException("Not enough bytes in stream");
 		}
-		byte[] packet = new byte[lastData-packetStart];
-		System.arraycopy(buffer.array(), packetStart, packet, 0, packet.length);
 		
-		System.arraycopy(packet, 12, sourceIp, 0, 4);
-		System.arraycopy(packet, 16, destIp, 0, 4);
-		version = (short)((packet[0] & 0xF0) >> 4);
-		ihl = (short)((packet[0] & 0x0F));
-		int packetLength = TCPIPUtils.toIntUnsigned(packet[2], packet[3]);
-		if (packetLength > packet.length) {
+		System.arraycopy(buffer.array(), packetStart + 12, sourceIp, 0, 4);
+		System.arraycopy(buffer.array(), packetStart + 16, destIp, 0, 4);
+		version = (short)((buffer.array()[0] & 0xF0) >> 4);
+		ihl = (short)((buffer.array()[0] & 0x0F));
+		int packetLength = TCPIPUtils.toIntUnsigned(buffer.array()[packetStart + 2], buffer.array()[packetStart + 3]);
+		if (packetStart + packetLength > lastData) {
 			throw new IllegalArgumentException("Not enough bytes in stream");
 		}
 		headerLength = ihl * 4;
-		protocol = packet[9];
-		
+		protocol = buffer.array()[packetStart + 9];
 		if (protocol == UDP) {
-			payload = new UDPPacket(this,packet, packetStart + headerLength, lastData);
+			payload = new UDPPacket(this,buffer, packetStart + headerLength, lastData);
 		} else if (protocol == TCP) {
-			payload = new TCPPacket(this,packet, packetStart + headerLength, lastData);
+			payload = new TCPPacket(this,buffer, packetStart + headerLength, lastData);
 		}
 	}
 

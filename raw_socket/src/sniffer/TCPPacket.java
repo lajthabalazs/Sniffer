@@ -2,6 +2,8 @@ package hu.edudroid.sniffer;
 
 import hu.edudroid.tcp_utils.TCPIPUtils;
 
+import java.nio.ByteBuffer;
+
 public class TCPPacket extends TransportPacket {
 	
 	//TCP specific
@@ -18,25 +20,23 @@ public class TCPPacket extends TransportPacket {
 	private int headerLength;
 	private byte[] data;
 
-	public TCPPacket(IPPacket ipPacket,byte[] buffer, int startIndex, int packetLength) {
+	public TCPPacket(IPPacket ipPacket,ByteBuffer buffer, int startIndex, int packetLength) {
 		super(ipPacket,buffer, startIndex, packetLength);
-		seqNum = TCPIPUtils.toLong(buffer[startIndex + 4],buffer[startIndex + 5],buffer[startIndex + 6],buffer[startIndex + 7]);
-		ackNum = TCPIPUtils.toLong(buffer[startIndex + 8],buffer[startIndex + 9],buffer[startIndex + 10],buffer[startIndex + 11]);
-		headerLength = 20;
-		setFlags(buffer[startIndex + 13]);
-		window = TCPIPUtils.toIntUnsigned(buffer[startIndex + 14], buffer[startIndex + 15]);
+		seqNum = TCPIPUtils.toLong(buffer.array()[startIndex + 4],buffer.array()[startIndex + 5],buffer.array()[startIndex + 6],buffer.array()[startIndex + 7]);
+		ackNum = TCPIPUtils.toLong(buffer.array()[startIndex + 8],buffer.array()[startIndex + 9],buffer.array()[startIndex + 10],buffer.array()[startIndex + 11]);
+		headerLength = TCPIPUtils.toIntUnsigned(ZERO, buffer.array()[startIndex + 12]);
+		setFlags(buffer.array()[startIndex + 13]);
+		window = TCPIPUtils.toIntUnsigned(buffer.array()[startIndex + 14], buffer.array()[startIndex + 15]);
 		if(URG){
-			urgPointer = TCPIPUtils.toIntUnsigned(buffer[startIndex + 18], buffer[startIndex + 19]);
+			urgPointer = TCPIPUtils.toIntUnsigned(buffer.array()[startIndex + 18], buffer.array()[startIndex + 19]);
 		}
-		data = new byte[packetLength - ipPacket.headerLength - headerLength];
-		System.arraycopy(buffer, startIndex+headerLength, data, 0, data.length);
+		data = new byte[packetLength - headerLength];
+		System.arraycopy(buffer.array(), startIndex+headerLength, data, 0, data.length);
 	}
-	
-	public TCPPacket(byte[] payload, int sourcePort, int destPort) {
-		super(sourcePort,destPort);
-		data = new byte[payload.length];
-		System.arraycopy(payload, 0, data, 0, payload.length);
-		headerLength = 20;
+
+	public TCPPacket(IPPacket ipPacket, int sourcePort, int destPort) {
+		super(ipPacket,sourcePort, destPort);
+		// TODO Generate packet from incoming data and headers
 	}
 	
 	public void setFlags(int flags) {
@@ -108,23 +108,6 @@ public class TCPPacket extends TransportPacket {
 	@Override
 	public void writePayload(byte[] buffer, int start) {
 		System.arraycopy(data, 0, buffer, start, data.length);
-	}
-	
-	/**
-	 * Get Sequence and Acknowledgement number
-	 * @return {SequenceNumber,AcknowledgementNumber}
-	 */
-	public long[] getTCPNumbers() {
-		long[] numbers = {seqNum,ackNum};
-		return numbers;
-	}
-	
-	public void setSequenceNumber(long seqNum){
-		this.seqNum = seqNum;
-	}
-	
-	public void setAcknowledgementNumber(long ackNum){
-		this.ackNum = ackNum;
 	}
 
 }

@@ -2,15 +2,16 @@ package hu.edudroid.sniffer;
 
 import hu.edudroid.tcp_utils.TCPIPUtils;
 
+import java.nio.ByteBuffer;
 
 public abstract class TransportPacket implements BytePacket {
 	public int sourcePort; 
 	public int destPort;
-	public IPPacket ipPacket;
+	private IPPacket ipPacket;
 
-	public TransportPacket(IPPacket ipPacket,byte[] buffer, int startIndex, int packetLength) {
-		sourcePort = TCPIPUtils.toIntUnsigned(buffer[startIndex], buffer[startIndex + 1]);
-		destPort =  TCPIPUtils.toIntUnsigned(buffer[startIndex + 2], buffer[startIndex + 3]);
+	public TransportPacket(IPPacket ipPacket,ByteBuffer buffer, int startIndex, int packetLength) {
+		sourcePort = TCPIPUtils.toIntUnsigned(buffer.array()[startIndex], buffer.array()[startIndex + 1]);
+		destPort =  TCPIPUtils.toIntUnsigned(buffer.array()[startIndex + 2], buffer.array()[startIndex + 3]);
 		this.ipPacket = ipPacket;
 	}
 
@@ -18,11 +19,6 @@ public abstract class TransportPacket implements BytePacket {
 		this.sourcePort = sourcePort;
 		this.destPort = destPort;
 		this.ipPacket = ipPacket;
-	}
-	
-	public TransportPacket(int sourcePort, int destPort) {
-		this.sourcePort = sourcePort;
-		this.destPort = destPort;
 	}
 	
 	public int checksum(byte[] ret) {
@@ -61,13 +57,5 @@ public abstract class TransportPacket implements BytePacket {
 	    }
 		
 	    return (~sum) & 0xFFFF;
-	}
-	
-	/**
-	 * Get Sequence and Acknowledgement number
-	 * @return {SequenceNumber,AcknowledgementNumber} if TCP else null
-	 */
-	public long[] getTCPNumbers() {
-		return null;
 	}
 }

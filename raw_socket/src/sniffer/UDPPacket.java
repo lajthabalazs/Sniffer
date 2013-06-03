@@ -4,6 +4,7 @@ import hu.edudroid.tcp_utils.TCPIPUtils;
 
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 public class UDPPacket extends TransportPacket {
 	private static final int UDP_HEADER_SIZE = 8;
@@ -15,10 +16,10 @@ public class UDPPacket extends TransportPacket {
 		data = new byte[packet.getLength()];
 	}
 
-	public UDPPacket(IPPacket ipPacket,byte[] buffer, int startIndex, int endIndex) {
+	public UDPPacket(IPPacket ipPacket,ByteBuffer buffer, int startIndex, int endIndex) {
 		super(ipPacket,buffer, startIndex, endIndex);
 		data = new byte[endIndex-startIndex-UDP_HEADER_SIZE];
-		System.arraycopy(buffer, startIndex+UDP_HEADER_SIZE, data, 0, endIndex-startIndex-UDP_HEADER_SIZE);
+		System.arraycopy(buffer.array(), startIndex+UDP_HEADER_SIZE, data, 0, endIndex-startIndex-UDP_HEADER_SIZE);
 	}
 
 	@Override
