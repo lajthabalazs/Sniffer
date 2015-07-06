@@ -9,35 +9,27 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 
-import android.util.SparseArray;
-
 public class UDPManager {
-	public HashMap<Long, SparseArray<DatagramSocket>> sockets = new HashMap<Long, SparseArray<DatagramSocket>>();
+	public HashMap<Long, HashMap<Integer,DatagramSocket>> sockets = new HashMap<Long, HashMap<Integer, DatagramSocket>>();
 	HashMap<DatagramSocket, UDPListeningThread> threads = new HashMap<DatagramSocket, UDPListeningThread>();
-	private MyVpnService vpnService;
-	
-	public UDPManager(MyVpnService vpnService) {
-		this.vpnService = vpnService;
-	}
 
 	public void sendPacket(byte[] destAddress, int destPort, int sourcePort, byte[] data) throws IOException {
 		long targetAddress = TCPIPUtils.getLongFromAddress(destAddress, destPort);
 		System.out.println("Target address " + targetAddress);
 		System.out.println("Source port " + sourcePort);
-		SparseArray<DatagramSocket> socketArray = sockets.get(targetAddress);
+		HashMap<Integer, DatagramSocket> socketArray = sockets.get(targetAddress);
 		if (socketArray == null) {
-			socketArray = new SparseArray<DatagramSocket>();
+			socketArray = new HashMap<Integer, DatagramSocket>();
 			sockets.put(targetAddress, socketArray);
 		}
 		DatagramSocket socket = socketArray.get(sourcePort);
 		if (socket == null) {
 			System.out.println("Opening UDP port");
 			socket = new DatagramSocket(sourcePort);
-			vpnService.protect(socket);
 			socket.connect(InetAddress.getByAddress(destAddress), destPort);
 			UDPListeningThread thread = new UDPListeningThread(socket, this);
 			threads.put(socket, thread);
-			socketArray.append(sourcePort, socket);
+			socketArray.put(sourcePort, socket);
 			thread.start();
 		}
 
@@ -46,6 +38,5 @@ public class UDPManager {
 	}
 	
 	public void packetReceived(DatagramPacket packet, InetSocketAddress localAddress) {
-		vpnService.packetReceived(packet, localAddress);
 	}
 }

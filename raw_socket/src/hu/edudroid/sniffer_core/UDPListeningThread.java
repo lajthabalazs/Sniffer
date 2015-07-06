@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-import android.util.Log;
-
 public class UDPListeningThread implements Runnable{
 	
 	byte[] receivingBuffer = new byte[2048];
@@ -37,7 +35,7 @@ public class UDPListeningThread implements Runnable{
 				System.out.println("Packet received from " + socket.getRemoteSocketAddress().toString() + " bytes " + receivePacket.getLength());
 				
 			} catch (IOException e) {
-				Log.e("Error receiving packet", "From " + socket.getRemoteSocketAddress() + " > " + e.toString());
+				e.printStackTrace();
 			}
 		}
 	}
